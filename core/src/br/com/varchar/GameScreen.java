@@ -7,6 +7,8 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
@@ -23,6 +25,11 @@ public class GameScreen implements Screen {
     private Texture textureBackground;
     private Texture textureFood;
 
+    private boolean[][] body;
+    private Array<Vector2> partes;
+
+    private int direction; // 1 - up 2- right - 3 down - 4 lef
+
     public GameScreen(Game game) {
         this.game = game;
     }
@@ -34,6 +41,20 @@ public class GameScreen implements Screen {
         this.viewport.apply();
 
         generateTexture();
+        init();
+    }
+
+    private void init() {
+        body = new boolean[20][20];
+        partes = new Array<Vector2>();
+
+        partes.add(new Vector2(6, 5));
+        body[6][5] = true;
+
+        partes.add(new Vector2(5, 5));
+        body[5][5] = true;
+
+        direction = 2;
     }
 
     private void generateTexture() {
@@ -78,6 +99,10 @@ public class GameScreen implements Screen {
         batch.begin();
 
         batch.draw(textureBackground, 0, 0, 100, 100);
+
+        for (Vector2 vector : partes) {
+             batch.draw(textureBody, vector.x * 5, vector.y * 5, 5, 5);
+        }
 
         batch.end();
     }

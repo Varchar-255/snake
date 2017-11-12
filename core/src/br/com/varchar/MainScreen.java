@@ -20,13 +20,17 @@ public class MainScreen implements Screen {
     private Texture[] menuTexture;
     private float time;
 
+    private boolean touching;
+
     public MainScreen(Game game) {
         this.game = game;
     }
 
     @Override
     public void show() {
-        time = 70;
+        time = 0;
+        touching = false;
+
         spriteBatch = new SpriteBatch();
 
         viewport = new FillViewport(1000, 1500);
@@ -42,6 +46,8 @@ public class MainScreen implements Screen {
     public void render(float delta) {
         time += delta;
 
+        input();
+
         spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
 
         Gdx.gl.glClearColor(0.29f, 0.894f, 0.373f, 1);
@@ -52,6 +58,15 @@ public class MainScreen implements Screen {
         spriteBatch.draw(menuTexture[(int)time%2], 0, 0, 1000, 1500);
 
         spriteBatch.end();
+    }
+
+    private void input() {
+        if (Gdx.input.justTouched()) {
+            touching = true;
+        } else if (!Gdx.input.justTouched() && touching == true) {
+            touching = false;
+            game.setScreen(new GameScreen(game));
+        }
     }
 
     @Override

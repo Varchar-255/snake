@@ -13,6 +13,8 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
+import java.util.Random;
+
 /**
  * Created by josevieira on 12/11/17.
  */
@@ -35,6 +37,13 @@ public class GameScreen implements Screen, GestureDetector.GestureListener {
 
     private Vector2 toque;
 
+    private Array<Vector2> pontos;
+    private float timeToNext;
+
+    private Random random;
+
+    private int state;
+
     public GameScreen(Game game) {
         this.game = game;
     }
@@ -49,6 +58,7 @@ public class GameScreen implements Screen, GestureDetector.GestureListener {
         init();
 
         toque = new Vector2();
+        random = new Random();
 
         Gdx.input.setInputProcessor(new GestureDetector(this));
     }
@@ -65,6 +75,11 @@ public class GameScreen implements Screen, GestureDetector.GestureListener {
 
         direction = 2;
         timeToMove = 0.4f;
+
+        pontos = new Array<Vector2>();
+        timeToNext = 3f;
+
+        state = 0;
     }
 
     private void generateTexture() {
@@ -116,63 +131,92 @@ public class GameScreen implements Screen, GestureDetector.GestureListener {
              batch.draw(textureBody, vector.x * 5, vector.y * 5, 5, 5);
         }
 
+        for (Vector2 vector : pontos) {
+            batch.draw(textureFood, vector.x * 5, vector.y * 5, 5, 5);
+        }
+
         batch.end();
     }
 
     private void update(float delta) {
-        timeToMove -= delta;
-        if (timeToMove <= 0) {
-            timeToMove = 0.4f;
+       if (state == 0){
+           timeToMove -= delta;
+           if (timeToMove <= 0) {
+               timeToMove = 0.4f;
 
-            Gdx.app.log("MOVE", "MOVE");
+               Gdx.app.log("MOVE", "MOVE");
 
-            int x1, x2;
-            int y1, y2;
+               int x1, x2;
+               int y1, y2;
 
-            x1 = (int) partes.get(0).x;
-            y1 = (int) partes.get(0).y;
+               x1 = (int) partes.get(0).x;
+               y1 = (int) partes.get(0).y;
 
-            body[x1][y1] = false;
+               body[x1][y1] = false;
 
-            x2 = x1;
-            y2 = y1;
+               x2 = x1;
+               y2 = y1;
 
-            switch (direction) {
-                case 1:
-                    y1 ++;
-                    break;
-                case 2:
-                    x1 ++;
-                    break;
-                case 3:
-                    y1 --;
-                    break;
-                case 4:
-                    x1 --;
-                    break;
-            }
+               switch (direction) {
+                   case 1:
+                       y1 ++;
+                       break;
+                   case 2:
+                       x1 ++;
+                       break;
+                   case 3:
+                       y1 --;
+                       break;
+                   case 4:
+                       x1 --;
+                       break;
+               }
 
-            if (x1 < 0 || y1 < 0 || x1 > 19 || y1 > 19 || body[x1][y1]) {
-                // perdemos
-                return;
-            }
+               if (x1 < 0 || y1 < 0 || x1 > 19 || y1 > 19 || body[x1][y1]) {
+                   state = 1;
+                   return;
+               }
 
-            partes.get(0).set(x1, y1);
-            body[x1][y1] = true;
 
-            for (int i = 1; i < partes.size; i ++) {
-                x1 = (int) partes.get(i).x;
-                y1 = (int) partes.get(i).y;
-                body[x1][y1] = false;
+               for (int j = 0; j < pontos.size; j++) {
+                   if (pontos.get(j).x == x1 && pontos.get(j).y == y1) {
+                       pontos.removeIndex(j);
+                       partes.insert(0, new Vector2(x1, y1));
+                       body[x1][y1] = true;
+                       body[x2][y2] = true;
+                       return;
+                   }
+               }
 
-                partes.get(i).set(x2, y2);
-                body[x2][y2] = true;
+               partes.get(0).set(x1, y1);
+               body[x1][y1] = true;
 
-                x2 = x1;
-                y2 = y1;
-            }
+               for (int i = 1; i < partes.size; i ++) {
+                   x1 = (int) partes.get(i).x;
+                   y1 = (int) partes.get(i).y;
+                   body[x1][y1] = false;
 
-        }
+                   partes.get(i).set(x2, y2);
+                   body[x2][y2] = true;
+
+                   x2 = x1;
+                   y2 = y1;
+               }
+
+           }
+
+           timeToNext -= delta;
+           if (timeToNext <= 0) {
+               int x = random.nextInt(20);
+               int y = random.nextInt(20);
+
+               if (!body[x][y]) {
+                   pontos.add(new Vector2(x, y));
+                   timeToNext = 5f;
+               }
+
+           }
+       }
     }
 
     @Override
@@ -207,7 +251,11 @@ public class GameScreen implements Screen, GestureDetector.GestureListener {
 
     @Override
     public boolean tap(float x, float y, int count, int button) {
-        return false;
+
+        if (state == 1) {
+            game.setScreen(new MainScreen(game));
+        }
+        return true;
     }
 
     @Override
@@ -219,17 +267,19 @@ public class GameScreen implements Screen, GestureDetector.GestureListener {
     public boolean fling(float velocityX, float velocityY, int button) {
         viewport.unproject(toque.set(velocityX, velocityY));
 
-        if (Math.abs(toque.x) > Math.abs(toque.y)) toque.y = 0;
-        else toque.x = 0;
+        if (state == 0) {
+            if (Math.abs(toque.x) > Math.abs(toque.y)) toque.y = 0;
+            else toque.x = 0;
 
-        if (toque.x > 50 && direction != 4) {
-            direction = 2;
-        } else if (toque.y > 50 && direction != 3) {
-            direction = 1;
-        } else if (toque.x < -50 && direction != 2) {
-            direction = 4;
-        } else if (toque.y < -50 && direction != 1) {
-            direction = 3;
+            if (toque.x > 50 && direction != 4) {
+                direction = 2;
+            } else if (toque.y > 50 && direction != 3) {
+                direction = 1;
+            } else if (toque.x < -50 && direction != 2) {
+                direction = 4;
+            } else if (toque.y < -50 && direction != 1) {
+                direction = 3;
+            }
         }
 
         return true;

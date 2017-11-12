@@ -40,6 +40,8 @@ public class MainScreen implements Screen {
 
         menuTexture[0] = new Texture("fundo0.png");
         menuTexture[1] = new Texture("fundo1.png");
+
+        Gdx.input.setInputProcessor(null);
     }
 
     @Override

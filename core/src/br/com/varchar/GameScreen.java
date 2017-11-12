@@ -30,6 +30,8 @@ public class GameScreen implements Screen {
 
     private int direction; // 1 - up 2- right - 3 down - 4 lef
 
+    private float timeToMove;
+
     public GameScreen(Game game) {
         this.game = game;
     }
@@ -55,6 +57,7 @@ public class GameScreen implements Screen {
         body[5][5] = true;
 
         direction = 2;
+        timeToMove = 0.4f;
     }
 
     private void generateTexture() {
@@ -91,6 +94,8 @@ public class GameScreen implements Screen {
 
     @Override
     public void render(float delta) {
+        update(delta);
+
         batch.setProjectionMatrix(viewport.getCamera().combined);
 
         Gdx.gl.glClearColor(0.29f, 0.894f, 0.373f, 1);
@@ -105,6 +110,62 @@ public class GameScreen implements Screen {
         }
 
         batch.end();
+    }
+
+    private void update(float delta) {
+        timeToMove -= delta;
+        if (timeToMove <= 0) {
+            timeToMove = 0.4f;
+
+            Gdx.app.log("MOVE", "MOVE");
+
+            int x1, x2;
+            int y1, y2;
+
+            x1 = (int) partes.get(0).x;
+            y1 = (int) partes.get(0).y;
+
+            body[x1][y1] = false;
+
+            x2 = x1;
+            y2 = y1;
+
+            switch (direction) {
+                case 1:
+                    y1 ++;
+                    break;
+                case 2:
+                    x1 ++;
+                    break;
+                case 3:
+                    y1 --;
+                    break;
+                case 4:
+                    x1 --;
+                    break;
+            }
+
+            if (x1 < 0 || y1 < 0 || x1 > 19 || y1 > 19 || body[x1][y1]) {
+                // perdemos
+                return;
+            }
+
+            partes.get(0).set(x1, y1);
+            body[x1][y1] = true;
+
+            for (int i = 1; i < partes.size; i ++) {
+                x1 = (int) partes.get(i).x;
+                y1 = (int) partes.get(i).y;
+                body[x1][y1] = false;
+
+                partes.get(i).set(x2, y2);
+                body[x2][y2] = true;
+
+                x2 = x1;
+                y2 = y1;
+            }
+
+        }
     }
 
     @Override
